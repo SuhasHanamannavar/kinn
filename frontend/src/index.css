@@ -1,0 +1,251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Apple/Mac Inspired Global Styles
+   ============================================================ */
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #F5F5F7;
+  color: #1D1D1F;
+  min-height: 100vh;
+}
+
+body {
+  background: 
+    radial-gradient(ellipse at top left, rgba(0, 122, 255, 0.06), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(175, 82, 222, 0.04), transparent 50%),
+    #F5F5F7;
+  background-attachment: fixed;
+}
+
+/* Custom scrollbar - Apple style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 122, 255, 0.2);
+  color: #1D1D1F;
+}
+
+/* ============================================================
+   Component Styles
+   ============================================================ */
+
+@layer components {
+  /* Frosted glass effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .glass-dark {
+    background: rgba(29, 29, 31, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  /* Apple-style card */
+  .card {
+    @apply bg-white rounded-apple-lg shadow-card;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  /* Apple-style button */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-pill font-medium text-sm transition-all duration-200 select-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-apple-blue text-white hover:bg-blue-600 active:scale-[0.98];
+    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
+  }
+
+  .btn-secondary {
+    @apply btn bg-apple-gray6 text-apple-text hover:bg-apple-gray5 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn text-apple-blue hover:bg-blue-50 active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply btn bg-apple-red text-white hover:bg-red-600 active:scale-[0.98];
+  }
+
+  /* Input fields */
+  .input {
+    @apply w-full px-4 py-3 rounded-apple bg-apple-gray6 border border-transparent text-apple-text placeholder-apple-gray2 transition-all duration-200 outline-none;
+  }
+
+  .input:focus {
+    @apply bg-white border-apple-blue/30;
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+  }
+
+  .input-lg {
+    @apply input text-base py-4 px-5;
+  }
+
+  /* Segmented control (Apple-style tabs) */
+  .segmented {
+    @apply inline-flex bg-apple-gray6 rounded-apple p-1;
+  }
+
+  .segmented-item {
+    @apply px-4 py-1.5 rounded-md text-sm font-medium text-apple-textSecondary transition-all duration-200 cursor-pointer;
+  }
+
+  .segmented-item.active {
+    @apply bg-white text-apple-text shadow-sm;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-pill text-xs font-medium;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-50 text-apple-blue;
+  }
+
+  .badge-green {
+    @apply badge bg-green-50 text-apple-green;
+  }
+
+  .badge-red {
+    @apply badge bg-red-50 text-apple-red;
+  }
+
+  .badge-orange {
+    @apply badge bg-orange-50 text-apple-orange;
+  }
+
+  .badge-gray {
+    @apply badge bg-apple-gray6 text-apple-textSecondary;
+  }
+
+  /* Divider */
+  .divider {
+    @apply h-px bg-black/5;
+  }
+
+  /* Loading shimmer */
+  .shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+/* ============================================================
+   Typography helpers
+   ============================================================ */
+
+.text-h1 {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.text-h2 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.text-h3 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.text-body {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1D1D1F;
+}
+
+.text-secondary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6E6E73;
+}
+
+.text-caption {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #8E8E93;
+}
+
+/* ============================================================
+   Animation utilities
+   ============================================================ */
+
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+
+/* ============================================================
+   Gradient backgrounds
+   ============================================================ */
+
+.gradient-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-score-high {
+  background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+}
+
+.gradient-score-medium {
+  background: linear-gradient(135deg, #FF9500 0%, #FFCC00 100%);
+}
+
+.gradient-score-low {
+  background: linear-gradient(135deg, #FF3B30 0%, #FF453A 100%);
+}
