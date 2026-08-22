@@ -1,138 +1,128 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import TopBar from '@/components/layout/TopBar';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
-import { CategoryPill } from '@/components/ui/Badges';
-import { sampleSignals } from '@/lib/sample-data';
-import { Mail } from 'lucide-react';
+import { Newspaper, Send, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function DigestPage() {
-  const unreadCount = sampleSignals.filter(s => !s.read).length;
-  const deadlineSignals = sampleSignals.filter(s => s.category === 'deadline');
-  const pricingSignals = sampleSignals.filter(s => s.category === 'pricing');
-  const contentSignals = sampleSignals.filter(s => s.category === 'content');
-  const policySignals = sampleSignals.filter(s => s.category === 'policy');
+  const [digest, setDigest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
+
+  async function fetchDigest() {
+    try {
+      const res = await fetch('/api/digest');
+      const data = await res.json();
+      if (data.success) {
+        setDigest(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchDigest();
+  }, []);
+
+  async function handleSendTestDigest() {
+    setSendingEmail(true);
+    setEmailStatus(null);
+    try {
+      const res = await fetch('/api/digest', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setEmailStatus(`Digest email successfully sent to ${data.emailSentTo}!`);
+      } else {
+        setEmailStatus('Error sending digest email. Please check your Resend configuration.');
+      }
+    } catch (e) {
+      console.error(e);
+      setEmailStatus('Connection error sending test email.');
+    } finally {
+      setSendingEmail(false);
+    }
+  }
 
   return (
     <>
       <TopBar 
         title="Digest" 
-        subtitle="Weekly intelligence brief from Kin."
-        unreadSignals={unreadCount}
+        subtitle="Weekly intelligence brief compiled by Kin."
+        unreadSignals={0}
       />
       
-      <div className="p-7">
-        <div className="flex items-end justify-between mb-5 flex-wrap gap-[14px]">
+      <div className="p-7 max-w-[700px] mx-auto">
+        <div className="flex items-end justify-between mb-6">
           <div>
-            <div className="eyebrow">Weekly digest</div>
-            <h1 className="section-title">Your Intelligence Brief</h1>
+            <div className="eyebrow">Weekly brief</div>
+            <h1 className="section-title">Weekly Digest</h1>
             <p className="section-sub">
-              Kin's curated summary of the most important changes this week.
+              Your Sunday morning summary of all website changes monitored by Kin.
             </p>
           </div>
-          <div className="flex gap-[10px]">
-            <Button variant="ghost">
-              <Mail size={16} /> Email me
-            </Button>
-            <Select
-              options={[
-                { value: 'week', label: 'This week' },
-                { value: 'last', label: 'Last week' },
-                { value: 'month', label: 'This month' },
-              ]}
-            />
-          </div>
+          <Button 
+            onClick={handleSendTestDigest} 
+            loading={sendingEmail}
+            className="flex items-center gap-1.5"
+          >
+            <Mail size={16} /> Send Test Email
+          </Button>
         </div>
 
-        <Card className="p-8 mx-auto" style={{ maxWidth: 760 }}>
-          {/* Header */}
-          <div className="text-center border-b border-[rgba(0,0,0,0.08)] pb-5 mb-6">
-            <div className="font-mono text-[11px] text-[#8A8D9A]">
-              KIN WEEKLY INTELLIGENCE BRIEF
+        {emailStatus && (
+          <div className={`mb-6 p-4 rounded-xl border flex items-start gap-3 text-[13.5px] ${emailStatus.includes('Error') || emailStatus.includes('error') ? 'border-red-200 bg-red-50 text-red-900' : 'border-green-200 bg-green-50 text-green-900'}`}>
+            {emailStatus.includes('Error') || emailStatus.includes('error') ? (
+              <AlertCircle className="text-red-600 mt-[2px] flex-shrink-0" size={18} />
+            ) : (
+              <CheckCircle2 className="text-green-600 mt-[2px] flex-shrink-0" size={18} />
+            )}
+            <div>{emailStatus}</div>
+          </div>
+        )}
+
+        <Card className="p-7">
+          <div className="flex items-center gap-3 border-b border-[rgba(0,0,0,0.06)] pb-4 mb-5">
+            <Newspaper className="text-[#2D5F8A]" size={22} />
+            <div>
+              <div className="text-[16px] font-bold text-[#1A1A1E]">Kin Intelligence Brief</div>
+              <div className="text-[12px] text-[#8A8D9A] mt-[1px]">
+                {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
             </div>
-            <div className="text-[22px] font-bold mt-[6px]">
-              Week of August 16–22, 2026
-            </div>
           </div>
 
-          {/* Summary paragraph */}
-          <div className="text-[14px] text-[#5A5D6B] leading-[1.7] mb-5">
-            Kin monitored <b>5 websites</b>, analyzed <b>2,847 content changes</b>, 
-            filtered out <b>92%</b> as noise, and surfaced <b>8 meaningful signals</b> across 4 categories.
-          </div>
-
-          {/* Signals grouped */}
-          <div className="flex flex-col gap-[18px]">
-            {/* Deadline */}
-            {deadlineSignals.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <CategoryPill category="deadline" label="Deadline" />
-                  <span className="text-[13px] font-bold">
-                    {deadlineSignals[0].title}
-                  </span>
+          <div className="space-y-6 min-h-[150px]">
+            {loading ? (
+              <div className="text-center py-10 text-[#8A8D9A] text-[13.5px]">Compiling weekly updates...</div>
+            ) : digest && digest.signals.length > 0 ? (
+              digest.signals.map((signal: any) => (
+                <div key={signal.id} className="pb-5 border-b border-[rgba(0,0,0,0.05)] last:border-b-0 last:pb-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#2D5F8A] px-2 py-0.5 bg-[rgba(45,95,138,0.08)] rounded-full">
+                      {signal.category_name || signal.category}
+                    </span>
+                    {signal.importance === 'high' && (
+                      <span className="text-[10px] font-bold uppercase text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                        High Priority
+                      </span>
+                    )}
+                    <span className="text-[11.5px] text-[#8A8D9A] ml-auto">{signal.site}</span>
+                  </div>
+                  <h4 className="text-[14.5px] font-bold text-[#1A1A1E] mb-1">{signal.title}</h4>
+                  <p className="text-[13px] text-[#5A5D6B] leading-relaxed">{signal.summary}</p>
                 </div>
-                <p className="text-[13.5px] text-[#5A5D6B] m-0 leading-[1.6]">
-                  {deadlineSignals[0].summary}
-                </p>
+              ))
+            ) : (
+              <div className="text-center py-10 text-[#8A8D9A] text-[13.5px]">
+                No monitored changes have been recorded this week yet.
               </div>
             )}
-
-            {/* Pricing */}
-            {pricingSignals.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <CategoryPill category="pricing" label="Pricing" />
-                  <span className="text-[13px] font-bold">
-                    Vercel Pro plan increased 25%
-                  </span>
-                </div>
-                <p className="text-[13.5px] text-[#5A5D6B] m-0 leading-[1.6]">
-                  Vercel raised Pro tier from $20 to $25 and introduced Enterprise. 
-                  If you're on Pro, evaluate whether the new pricing fits your budget.
-                </p>
-              </div>
-            )}
-
-            {/* Content */}
-            {contentSignals.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <CategoryPill category="content" label="New Content" />
-                  <span className="text-[13px] font-bold">
-                    3 new hackathons + 12 AI courses
-                  </span>
-                </div>
-                <p className="text-[13.5px] text-[#5A5D6B] m-0 leading-[1.6]">
-                  Devpost posted Spring 2026 hackathons including a $50K AI/ML competition. 
-                  Coursera added 12 generative AI courses from Stanford and DeepLearning.AI.
-                </p>
-              </div>
-            )}
-
-            {/* Policy */}
-            {policySignals.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <CategoryPill category="policy" label="Policy" />
-                  <span className="text-[13px] font-bold">
-                    SEC cybersecurity disclosure rules updated
-                  </span>
-                </div>
-                <p className="text-[13.5px] text-[#5A5D6B] m-0 leading-[1.6]">
-                  New 4-day reporting requirement for material cybersecurity incidents. 
-                  Relevant for compliance and investment monitoring.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-7 pt-5 border-t border-[rgba(0,0,0,0.08)] text-center text-[12px] text-[#8A8D9A]">
-            Generated by Kin · Confidence: High · Sources verified
           </div>
         </Card>
       </div>

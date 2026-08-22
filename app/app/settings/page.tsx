@@ -1,22 +1,73 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TopBar from '@/components/layout/TopBar';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import { Toggle } from '@/components/ui/Badges';
-import { sampleSignals } from '@/lib/sample-data';
 import { useAuth } from '@/supabase/AuthProvider';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
-  const unreadCount = sampleSignals.filter(s => !s.read).length;
 
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [onlyHighImportance, setOnlyHighImportance] = useState(false);
+  const [scanFrequency, setScanFrequency] = useState('daily');
+  const [noiseSensitivity, setNoiseSensitivity] = useState('balanced');
+  const [aiTone, setAiTone] = useState('simple');
   const [includeRawEvidence, setIncludeRawEvidence] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  async function fetchSettings() {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.success && data.settings) {
+        const s = data.settings;
+        setEmailAlerts(s.email_alerts !== false);
+        setWeeklyDigest(s.weekly_digest !== false);
+        setOnlyHighImportance(!!s.only_high_importance);
+        setScanFrequency(s.scan_frequency || 'daily');
+        setNoiseSensitivity(s.noise_sensitivity || 'balanced');
+        setAiTone(s.ai_tone || 'simple');
+        setIncludeRawEvidence(s.include_raw_evidence !== false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  async function handleSaveSettings() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email_alerts: emailAlerts,
+          weekly_digest: weeklyDigest,
+          only_high_importance: onlyHighImportance,
+          scan_frequency: scanFrequency,
+          noise_sensitivity: noiseSensitivity,
+          ai_tone: aiTone,
+          include_raw_evidence: includeRawEvidence,
+        }),
+      });
+      await res.json();
+      alert('Settings saved successfully!');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const initials = user?.email 
     ? user.email.split('@')[0].substring(0, 2).toUpperCase() 
@@ -27,19 +78,24 @@ export default function SettingsPage() {
       <TopBar 
         title="Settings" 
         subtitle="Configure how Kin monitors, analyzes, and notifies you."
-        unreadSignals={unreadCount}
+        unreadSignals={0}
       />
       
-      <div className="p-7">
-        <div className="mb-6">
-          <div className="eyebrow">Preferences</div>
-          <h1 className="section-title">Settings</h1>
-          <p className="section-sub">
-            Configure monitoring, notifications, and preferences.
-          </p>
+      <div className="p-7 max-w-[680px] mx-auto">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <div className="eyebrow">Preferences</div>
+            <h1 className="section-title">Settings</h1>
+            <p className="section-sub">
+              Customize change detection parameters, alerting profiles, and Groq-LPU summaries.
+            </p>
+          </div>
+          <Button onClick={handleSaveSettings} loading={saving}>
+            {saving ? 'Saving...' : 'Save Settings'}
+          </Button>
         </div>
 
-        <div className="flex flex-col gap-4 max-w-[680px]">
+        <div className="flex flex-col gap-4">
           {/* Notifications */}
           <Card className="p-[22px]">
             <div className="text-[15px] font-bold mb-4">Notifications</div>
@@ -47,7 +103,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Email alerts</div>
+                  <div className="text-[13.5px] font-semibold">Email Alerts</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
                     Get an email when Kin detects a meaningful change
                   </div>
@@ -57,7 +113,7 @@ export default function SettingsPage() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Weekly digest</div>
+                  <div className="text-[13.5px] font-semibold">Weekly Digest</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
                     Sunday morning summary of all signals from the week
                   </div>
@@ -67,7 +123,7 @@ export default function SettingsPage() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Only high importance</div>
+                  <div className="text-[13.5px] font-semibold">Only High Importance</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
                     Don't notify me about low-importance signals
                   </div>
@@ -84,13 +140,14 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Scan frequency</div>
+                  <div className="text-[13.5px] font-semibold">Scan Frequency</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
                     How often Kin checks your watchlist
                   </div>
                 </div>
                 <Select
-                  defaultValue="daily"
+                  value={scanFrequency}
+                  onChange={(e) => setScanFrequency(e.target.value)}
                   options={[
                     { value: 'daily', label: 'Daily (recommended)' },
                     { value: '12h', label: 'Every 12 hours' },
@@ -102,13 +159,14 @@ export default function SettingsPage() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Noise sensitivity</div>
+                  <div className="text-[13.5px] font-semibold">Noise Sensitivity</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
-                    Higher = fewer signals but only the most meaningful changes
+                    Balanced = standard; Conservative = ignore tiny updates; Aggressive = catch minor changes
                   </div>
                 </div>
                 <Select
-                  defaultValue="balanced"
+                  value={noiseSensitivity}
+                  onChange={(e) => setNoiseSensitivity(e.target.value)}
                   options={[
                     { value: 'balanced', label: 'Balanced' },
                     { value: 'conservative', label: 'Conservative (fewer signals)' },
@@ -126,13 +184,14 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Summary tone</div>
+                  <div className="text-[13.5px] font-semibold">Summary Tone</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
                     How Kin phrases its explanations
                   </div>
                 </div>
                 <Select
-                  defaultValue="simple"
+                  value={aiTone}
+                  onChange={(e) => setAiTone(e.target.value)}
                   options={[
                     { value: 'simple', label: 'Simple & clear' },
                     { value: 'detailed', label: 'Detailed & thorough' },
@@ -143,9 +202,9 @@ export default function SettingsPage() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[13.5px] font-semibold">Include raw evidence</div>
+                  <div className="text-[13.5px] font-semibold">Include Raw Evidence</div>
                   <div className="text-[12px] text-[#8A8D9A] mt-[2px]">
-                    Show before/after data in signal details
+                    Show diff text comparisons in signal details
                   </div>
                 </div>
                 <Toggle checked={includeRawEvidence} onChange={setIncludeRawEvidence} />
@@ -165,15 +224,13 @@ export default function SettingsPage() {
                 {initials}
               </div>
               <div>
-                <div className="font-semibold">{user?.email?.split('@')[0] || 'Alex Kim'}</div>
-                <div className="text-[12.5px] text-[#8A8D9A]">{user?.email || 'alex@example.com'}</div>
+                <div className="font-semibold">{user?.email?.split('@')[0] || 'Guest User'}</div>
+                <div className="text-[12.5px] text-[#8A8D9A]">{user?.email || 'guest@workspace.local'}</div>
               </div>
             </div>
             
             <div className="flex gap-[10px] flex-wrap">
-              <Button variant="ghost">Edit profile</Button>
-              <Button variant="ghost">Manage subscription</Button>
-              <Button variant="danger" onClick={() => signOut()}>Sign out</Button>
+              <Button variant="danger" onClick={() => signOut()}>Sign Out</Button>
             </div>
           </Card>
         </div>

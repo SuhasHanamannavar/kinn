@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import AuthLayout from '../layout';
+import AuthLayoutWrapper from '../AuthLayoutWrapper';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Link from 'next/link';
-import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
@@ -38,7 +38,7 @@ export default function SignInPage() {
   };
 
   return (
-    <AuthLayout 
+    <AuthLayoutWrapper 
       title="Welcome back" 
       subtitle="Sign in to continue monitoring with Kin."
     >
@@ -134,6 +134,6 @@ export default function SignInPage() {
           Create one
         </Link>
       </p>
-    </AuthLayout>
+    </AuthLayoutWrapper>
   );
 }

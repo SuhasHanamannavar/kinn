@@ -13,7 +13,7 @@ const BRIGHTDATA_CUSTOMER_ID = Deno.env.get('BRIGHTDATA_CUSTOMER_ID')!;
 
 async function fetchWithBrightData(url: string): Promise<{ html: string; status: number }> {
   // BrightData Web Unlocker API
-  const brightDataUrl = `https://api.brightdata.com/request?customer=${BRIGHTDATA_CUSTOMER_ID}&zone=web_unlocker`;
+  const brightDataUrl = `https://api.brightdata.com/request?customer=${BRIGHTDATA_CUSTOMER_ID}&zone=cli_unlocker`;
   
   const response = await fetch(brightDataUrl, {
     method: 'POST',

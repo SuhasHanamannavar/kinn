@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 /**
  * Server-side Supabase client for use in Server Components and Route Handlers
@@ -20,18 +20,14 @@ export function createClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // Handled if called from Server Component
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // Handled if called from Server Component
           }
         },
       },
@@ -40,11 +36,10 @@ export function createClient() {
 }
 
 /**
- * Server-side Supabase client with service role for admin operations
- * Use ONLY on the server, never expose to client
+ * Server-side Supabase client with service role for admin operations and backend tasks
  */
 export function createServiceClient() {
-  return createServerClient(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
@@ -54,14 +49,4 @@ export function createServiceClient() {
       },
     }
   );
-}
-
-/**
- * Client-side Supabase client for use in Client Components
- */
-export function createBrowserClient() {
-  return createClientComponentClient({
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  });
 }

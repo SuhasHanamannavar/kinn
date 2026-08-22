@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Search, Bell } from 'lucide-react';
 import { useAuth } from '@/supabase/AuthProvider';
@@ -61,7 +63,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div 
           className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-[13px] cursor-pointer"
           style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}
-          title={user?.email}
+          title={user?.email || 'User'}
         >
           {initials}
         </div>

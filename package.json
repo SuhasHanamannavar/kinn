@@ -2,16 +2,13 @@
   "name": "kin-saas",
   "version": "1.0.0",
   "private": true,
-  "description": "Kin — AI-powered website change monitoring SaaS",
+  "description": "Kin - AI-powered website change monitoring SaaS",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
-    "db:generate": "supabase gen types typescript --project-id YOUR_PROJECT_ID > types/database.ts",
-    "db:migrate": "supabase db push",
-    "functions:deploy": "supabase functions deploy --project-ref YOUR_PROJECT_ID"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",
@@ -25,8 +22,7 @@
     "react-dom": "^18.3.1",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.2",
-    "lucide-react": "^0.427.0",
-    "brightdata-sdk": "^1.2.0"
+    "lucide-react": "^0.427.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
