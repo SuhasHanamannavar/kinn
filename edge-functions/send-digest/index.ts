@@ -1,0 +1,203 @@
+// ============================================================
+// Edge Function: send-digest
+// Sends weekly intelligence digest email to all users
+// who have enabled weekly digests
+// ============================================================
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
+const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'alerts@kin.example.com';
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+
+function buildDigestEmailHtml(user: any, signals: any[], weekStart: Date, weekEnd: Date): string {
+  const highSignals = signals.filter(s => s.importance === 'high');
+  const formatDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Kin Weekly Digest</title>
+</head>
+<body style="margin:0;padding:0;background:#FAFAF7;font-family:Inter,-apple-system,sans-serif;color:#1A1A1E;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAFAF7;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding:28px;text-align:center;border-bottom:1px solid rgba(0,0,0,0.08);">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#8A8D9A;font-family:JetBrains Mono,monospace;">
+                KIN WEEKLY INTELLIGENCE BRIEF
+              </div>
+              <div style="font-size:22px;font-weight:700;margin-top:6px;">
+                Week of ${formatDate(weekStart)}–${formatDate(weekEnd)}, ${weekEnd.getFullYear()}
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Summary -->
+          <tr>
+            <td style="padding:28px 28px 0;">
+              <p style="font-size:14px;color:#5A5D6B;line-height:1.7;margin:0;">
+                Kin monitored your watchlist this week and found <b>${signals.length}</b> meaningful signal${signals.length !== 1 ? 's' : ''}.
+                ${highSignals.length > 0 ? `<b style="color:#DC2626;">${highSignals.length} high importance</b> items need your attention.` : 'Everything looks stable.'}
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Signals -->
+          <tr>
+            <td style="padding:20px 28px 28px;">
+              ${signals.length === 0 ? `
+                <div style="text-align:center;padding:40px 20px;color:#8A8D9A;">
+                  <div style="font-size:36px;margin-bottom:8px;">🐧</div>
+                  <div style="font-weight:600;color:#5A5D6B;">No signals this week</div>
+                  <div style="font-size:13px;margin-top:4px;">Kin is watching quietly.</div>
+                </div>
+              ` : signals.slice(0, 8).map(signal => `
+                <div style="padding:14px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
+                  <div style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(0,0,0,0.05);color:#5A5D6B;margin-bottom:6px;">
+                    ${signal.category_name}
+                  </div>
+                  ${signal.importance === 'high' ? `
+                    <span style="display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#DC2626;">● HIGH</span>
+                  ` : ''}
+                  <div style="font-size:14px;font-weight:700;color:#1A1A1E;margin:4px 0;">
+                    ${signal.title}
+                  </div>
+                  <div style="font-size:13px;color:#5A5D6B;line-height:1.6;">
+                    ${signal.summary}
+                  </div>
+                  <div style="font-size:11px;color:#8A8D9A;margin-top:4px;">
+                    ${signal.site}
+                  </div>
+                </div>
+              `).join('')}
+            </td>
+          </tr>
+          
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 28px 28px;text-align:center;">
+              <a href="${APP_URL}/app/digest" style="display:inline-block;padding:11px 24px;background:#1A1A1E;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600;">
+                Open full digest in Kin →
+              </a>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 28px;background:#FAFAF7;border-top:1px solid rgba(0,0,0,0.06);text-align:center;">
+              <p style="font-size:11px;color:#8A8D9A;margin:0;">
+                Generated by Kin · Confidence: High · Sources verified<br>
+                <a href="${APP_URL}/app/settings" style="color:#2D5F8A;text-decoration:none;">Manage preferences</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+Deno.serve(async (req) => {
+  const authHeader = req.headers.get('apikey');
+  if (authHeader !== SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  try {
+    // Calculate date range (last 7 days)
+    const weekEnd = new Date();
+    const weekStart = new Date(weekEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Find users who want weekly digests
+    const { data: users, error: usersError } = await supabase
+      .from('user_settings')
+      .select('user_id, weekly_digest')
+      .eq('weekly_digest', true);
+
+    if (usersError) throw usersError;
+
+    console.log(`Sending weekly digest to ${users?.length || 0} users`);
+
+    const results = [];
+
+    for (const setting of users || []) {
+      try {
+        // Get user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', setting.user_id)
+          .single();
+
+        if (!profile) continue;
+
+        // Get signals from this week
+        const { data: signals } = await supabase
+          .from('signals')
+          .select('*')
+          .eq('user_id', setting.user_id)
+          .gte('detected_at', weekStart.toISOString())
+          .lte('detected_at', weekEnd.toISOString())
+          .order('importance', { ascending: false })
+          .order('detected_at', { ascending: false });
+
+        // Build and send email
+        const emailHtml = buildDigestEmailHtml(profile, signals || [], weekStart, weekEnd);
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: `Kin <${RESEND_FROM_EMAIL}>`,
+            to: [profile.email],
+            subject: `🐧 Kin Weekly Digest — ${signals?.length || 0} signal${signals?.length !== 1 ? 's' : ''} this week`,
+            html: emailHtml,
+          }),
+        });
+
+        results.push({ user_id: setting.user_id, email: profile.email, signals_sent: signals?.length || 0 });
+      } catch (err) {
+        results.push({ user_id: setting.user_id, error: String(err) });
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        total_users: users?.length || 0,
+        results,
+        week_start: weekStart.toISOString(),
+        week_end: weekEnd.toISOString(),
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in send-digest:', error);
+    return new Response(JSON.stringify({ error: String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+});

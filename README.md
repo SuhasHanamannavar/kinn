@@ -1,188 +1,289 @@
-# Kin — Company Research Platform
+# Kin — AI Website Change Monitor
 
-A professional company research platform inspired by Apple's design aesthetics. Generate comprehensive research reports on public companies with real-time data.
+> Add a URL. Kin tells you when it matters.
 
-## Features
+Kin is an AI-powered SaaS platform that quietly monitors any website, detects meaningful changes, and sends plain-English alerts via email. Built for students, professionals, and researchers who can't afford to miss important updates.
 
-- **Company Search**: Search by company name or ticker symbol
-- **Comprehensive Research Reports**: 
-  - Company Overview
-  - Product & Technology Analysis
-  - Financial Fundamentals
-  - Market & Competition
-  - Growth Catalysts & Risk Factors
-  - Investment Conclusion with Score & Recommendation
-- **Personal Dashboard**: Track your research history and statistics
-- **Secure Authentication**: Powered by Clerk
-- **Real-time Data**: Bright Data integration for accurate company information
-- **Apple/Mac Design**: Clean, modern interface with frosted glass effects
+## ✨ Features
 
-## Tech Stack
+- **Website Monitoring** — Add any URL, Kin checks it daily (or more frequently)
+- **AI-Powered Analysis** — Llama 3 via Groq classifies changes by type and importance
+- **Self-Healing Scrapers** — BrightData Web Unlocker with AI template healing
+- **Plain-English Alerts** — No raw HTML diffs. Just clear, actionable summaries
+- **Email Notifications** — Real-time alerts + weekly intelligence digest
+- **Kin AI Companion** — Chat with Kin about your signals and monitored sites
+- **Categories** — Deadlines, Pricing, Policy, Features, Announcements, Content
+- **Importance Ranking** — High / Medium / Low classification
 
-### Backend
-- **Node.js** + **Express.js** - REST API server
-- **Supabase** - PostgreSQL database
-- **Clerk** - Authentication & user management
-- **Bright Data** - Company data collection
-
-### Frontend
-- **React 18** + **Vite** - Modern frontend framework
-- **React Router** - Client-side routing
-- **Tailwind CSS** - Utility-first styling
-- **Clerk React** - Authentication components
-
-## Project Structure
+## 🏗️ Architecture
 
 ```
-kin-research/
-├── backend/
-│   ├── server.js          # Main Express server
-│   ├── .env               # Environment variables
-│   ├── schema.sql         # Database schema
-│   ├── package.json
-│   ├── middleware/
-│   │   └── auth.js        # Clerk auth middleware
-│   ├── routes/
-│   │   ├── auth.js        # Auth endpoints
-│   │   ├── companies.js   # Company search & data
-│   │   └── research.js    # Report generation & management
-│   └── services/
-│       ├── supabase.js    # Database operations
-│       ├── clerk.js       # Clerk client
-│       └── brightdata.js  # Bright Data integration
-└── frontend/
-    ├── index.html
-    ├── .env               # Environment variables
-    ├── package.json
-    ├── tailwind.config.js
-    ├── vite.config.js
-    └── src/
-        ├── main.jsx       # React entry point
-        ├── App.jsx        # App with routing
-        ├── index.css      # Global styles & Apple theme
-        ├── components/
-        │   └── Layout.jsx # Navigation & layout
-        ├── pages/
-        │   ├── Home.jsx           # Landing page
-        │   ├── Search.jsx         # Company search
-        │   ├── CompanyDetail.jsx  # Company profile
-        │   ├── Dashboard.jsx      # User dashboard
-        │   ├── Reports.jsx        # Reports list
-        │   └── ReportDetail.jsx   # Full research report
-        └── services/
-            └── api.js       # API client
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Next.js    │────▶│  Supabase    │────▶│  BrightData  │
+│  Frontend   │     │  PostgreSQL  │     │  Web Unlocker│
+└─────────────┘     │  + pg_cron   │     └──────┬───────┘
+       │            │  + pg_net    │            │
+       │            └──────┬───────┘            ▼
+       │                   │              ┌──────────────┐
+       └───────────────────┼─────────────▶│  Groq API    │
+                           │              │  (Llama 3)   │
+                           │              └──────┬───────┘
+                           ▼                     │
+                    ┌──────────────┐             │
+                    │  Edge        │◀────────────┘
+                    │  Functions   │─────┐
+                    └──────────────┘     │
+                           ▲             ▼
+                           │        ┌──────────────┐
+                           └────────│  Resend      │
+                                    │  Email API   │
+                                    └──────────────┘
 ```
 
-## Getting Started
+### Data Pipeline (6 Stages)
 
-### 1. Database Setup
+1. **User Auth & URL Input** → Next.js + Supabase Auth
+2. **Persistence & Scheduling** → PostgreSQL + pg_cron
+3. **BrightData Scraping** → Web Unlocker + AI Self-Healing
+4. **Change Detection** → SHA-256 hashing + noise filtering + diff
+5. **Groq AI Simplification** → Llama 3 classification & summarization
+6. **Email Notification** → Resend API + React Email templates
 
-First, set up your Supabase database by running the SQL schema:
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 14 (App Router) + React 18 + TypeScript |
+| **Styling** | Tailwind CSS + Custom Design System |
+| **Database** | Supabase PostgreSQL 15+ |
+| **Auth** | Supabase Auth (GoTrue) — Email + OAuth |
+| **Scheduling** | pg_cron + pg_net |
+| **Backend** | Supabase Edge Functions (Deno/TypeScript) |
+| **Scraping** | BrightData Web Unlocker + AI Self-Healing |
+| **AI** | Groq API (Llama 3 70B) on LPU hardware |
+| **Email** | Resend API |
+| **Deployment** | Vercel (Frontend) + Supabase (Backend) |
+
+## 📁 Project Structure
+
+```
+kin/
+├── app/                          # Next.js App Router
+│   ├── layout.tsx               # Root layout
+│   ├── page.tsx                 # Marketing landing page
+│   ├── app/                     # Authenticated application
+│   │   ├── layout.tsx           # App shell with sidebar
+│   │   ├── dashboard/page.tsx   # Overview dashboard
+│   │   ├── signals/page.tsx     # Signal feed with filters
+│   │   ├── watchlist/page.tsx   # URL management
+│   │   ├── kin/page.tsx         # Kin AI chat interface
+│   │   ├── digest/page.tsx      # Weekly intelligence brief
+│   │   └── settings/page.tsx    # User preferences
+│   └── auth/                    # Authentication pages
+│       ├── sign-in/
+│       ├── sign-up/
+│       └── reset-password/
+├── components/
+│   ├── ui/                      # Design system primitives
+│   │   ├── KinCharacter.tsx     # 🐧 Penguin mascot component
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   ├── Input.tsx
+│   │   ├── Select.tsx
+│   │   ├── Badges.tsx           # Pills, chips, toggles
+│   │   └── SignalCard.tsx
+│   └── layout/                  # App shell components
+│       ├── Sidebar.tsx
+│       ├── TopBar.tsx
+│       └── AppShell.tsx
+├── edge-functions/              # Supabase Edge Functions
+│   ├── trigger-scraping/        # pg_cron → scrape queue
+│   ├── scrape-url/              # BrightData fetch + snapshot
+│   ├── process-change/          # Diff + noise filtering
+│   ├── ai-summarize/            # Groq classification
+│   ├── send-notification/       # Resend signal alerts
+│   ├── send-digest/             # Weekly email digest
+│   └── chat-message/            # Kin AI chat (RAG)
+├── supabase/
+│   ├── schema.sql               # Complete database schema
+│   ├── server.ts                # Server/client creators
+│   └── AuthProvider.tsx         # React auth context
+├── lib/
+│   ├── utils.ts                 # Helpers (cn, time, hashing)
+│   └── sample-data.ts           # Demo data
+├── types/
+│   └── index.ts                 # TypeScript type definitions
+├── styles/
+│   └── globals.css              # Global styles + Tailwind
+├── middleware.ts                # Auth route protection
+├── tailwind.config.ts           # Kin design tokens
+└── package.json
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- A Supabase project
+- BrightData account (Web Unlocker)
+- Groq API key
+- Resend API key
+
+### 1. Install dependencies
 
 ```bash
-# Copy schema.sql contents to your Supabase SQL Editor
-# or run via psql
-psql $SUPABASE_DB_URL -f backend/schema.sql
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
 npm install
-
-# The .env file is pre-configured with your API keys:
-# - SUPABASE_URL
-# - SUPABASE_SERVICE_ROLE_KEY  
-# - CLERK_SECRET_KEY
-# - BRIGHT_DATA_API_KEY
-# - BRIGHT_DATA_COLLECTOR_ID
-
-npm start
 ```
 
-Backend runs on **http://localhost:3001**
-
-### 3. Frontend Setup
+### 2. Configure environment
 
 ```bash
-cd frontend
-npm install
+cp .env.example .env.local
+```
 
-# The .env file is pre-configured with:
-# - VITE_CLERK_PUBLISHABLE_KEY
-# - VITE_API_URL
+Fill in your API keys in `.env.local`:
 
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# BrightData
+BRIGHTDATA_API_KEY=your_api_key
+BRIGHTDATA_CUSTOMER_ID=your_customer_id
+
+# Groq
+GROQ_API_KEY=your_groq_key
+
+# Resend
+RESEND_API_KEY=your_resend_key
+RESEND_FROM_EMAIL=alerts@yourdomain.com
+```
+
+### 3. Set up the database
+
+1. Create a new Supabase project
+2. Run the schema in `supabase/schema.sql` via the SQL Editor
+3. Enable the following extensions: `pg_cron`, `pg_net`, `pgcrypto`, `uuid-ossp`
+
+### 4. Deploy Edge Functions
+
+```bash
+# Login to Supabase CLI
+supabase login
+
+# Link your project
+supabase link --project-ref YOUR_PROJECT_ID
+
+# Deploy all functions
+supabase functions deploy trigger-scraping
+supabase functions deploy scrape-url
+supabase functions deploy process-change
+supabase functions deploy ai-summarize
+supabase functions deploy send-notification
+supabase functions deploy send-digest
+supabase functions deploy chat-message
+
+# Set secrets for each function
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=...
+supabase secrets set BRIGHTDATA_API_KEY=...
+supabase secrets set BRIGHTDATA_CUSTOMER_ID=...
+supabase secrets set GROQ_API_KEY=...
+supabase secrets set RESEND_API_KEY=...
+supabase secrets set RESEND_FROM_EMAIL=...
+```
+
+### 5. Run the development server
+
+```bash
 npm run dev
 ```
 
-Frontend runs on **http://localhost:5173**
+Visit `http://localhost:3000`
 
-## API Endpoints
+## 🐧 Kin — The Penguin AI Companion
 
-### Authentication
-- `GET /api/auth/me` - Get current user profile
-- `POST /api/auth/webhook` - Clerk webhook endpoint
+Kin is not decorative branding. Kin is the personality of the product. The character appears in:
 
-### Companies
-- `GET /api/companies` - List companies
-- `GET /api/companies/search?q=` - Search companies
-- `GET /api/companies/:ticker` - Get company details
-- `GET /api/companies/history/recent` - Get search history
+- **Landing page** — Hero and introduction
+- **Sidebar** — Quick access to chat
+- **Dashboard** — System status indicator
+- **Chat interface** — Full conversational mode
+- **Empty states** — Friendly guidance
+- **Loading states** — Animated reactions
 
-### Research
-- `POST /api/research/generate` - Generate research report
-- `GET /api/research/my` - Get user's reports
-- `GET /api/research/:id` - Get report details
-- `DELETE /api/research/:id` - Delete a report
+**Kin States:** `idle`, `listening`, `scanning`, `analyzing`, `found`, `important`, `thinking`
 
-### Health
-- `GET /api/health` - Server health check
+## 🎨 Design System
 
-## Environment Variables
+### Colors
+- **Background**: `#FAFAF7` (warm off-white)
+- **Primary**: `#1A1A1E` (near-black)
+- **Muted**: `#5A5D6B` / `#8A8D9A`
+- **Kin Beak**: `#FF8C42` / `#FF9A3C`
+- **Kin Cheeks**: `#FFB347`
 
-### Backend (`backend/.env`)
-```
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-BRIGHT_DATA_API_KEY=your_bright_data_api_key
-BRIGHT_DATA_COLLECTOR_ID=your_collector_id
-PORT=3001
-```
+### Category Colors
+| Category | Color |
+|----------|-------|
+| Content | `#0891B2` cyan |
+| Pricing | `#D97706` amber |
+| Policy | `#7C3AED` violet |
+| Feature | `#059669` green |
+| Announce | `#BE185D` pink |
+| Deadline | `#DC2626` red |
 
-### Frontend (`frontend/.env`)
-```
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-VITE_API_URL=http://localhost:3001/api
-```
+### Typography
+- **Inter** — UI text (300–800 weights)
+- **JetBrains Mono** — Code, technical labels
 
-## Design System
+### Components
+- **Cards**: 14px radius, 1px border, subtle hover shadow
+- **Buttons**: 10px radius, primary = near-black solid
+- **Inputs**: 10px radius, subtle focus ring
+- **Animation**: `cubic-bezier(0.16, 1, 0.3, 1)` easing
 
-The UI follows Apple's design language:
+## 💰 Cost Analysis
 
-- **Colors**: Apple system colors (blue, green, red, orange, etc.)
-- **Typography**: SF Pro stack with proper letter-spacing
-- **Effects**: Frosted glass (backdrop-filter), subtle shadows
-- **Components**: Rounded corners (pill buttons, card radius), segmented controls
-- **Motion**: Smooth transitions, subtle hover effects, fade/slide animations
+### Startup (Free Tier)
+- **Supabase Free**: $0 (500MB DB, 50K MAU)
+- **BrightData**: Free trial credits
+- **Groq Free**: 30 RPM, ~500K tokens/day
+- **Resend Free**: 3,000 emails/month
+- **Vercel Hobby**: $0
 
-## Report Scoring System
+### At Scale (100 users × 5 URLs/day)
+| Service | Cost |
+|---------|------|
+| Supabase Pro | $25 |
+| BrightData (~15K pages) | $30–50 |
+| Groq AI (~500K tokens) | $0.05–0.10 |
+| Resend (over free) | $0–20 |
+| Vercel | $0–20 |
+| **Total** | **$55–115/month** |
 
-Reports include an overall score (0-100) based on:
-- Revenue growth momentum
-- Profitability margins
-- Return on equity
-- Capital structure / leverage
+## 🔒 Security
 
-| Score | Recommendation |
-|-------|---------------|
-| 75+ | Strong Buy |
-| 60-74 | Buy |
-| 45-59 | Hold |
-| 30-44 | Reduce |
-| <30 | Sell |
+- **Row Level Security (RLS)** on all tables — users only see their own data
+- **Service role keys** never exposed to client
+- **Secrets stored** in Supabase Vault / Edge Function secrets
+- **HTTPS only** for all external API calls
+- **Input validation** on all endpoints
+- **CSRF protection** via Supabase Auth cookies
 
-## License
+## 📄 License
 
-MIT
+MIT License — see LICENSE file
+
+## 🤝 Support
+
+For questions or issues:
+1. Check the documentation in this README
+2. Review the database schema in `supabase/schema.sql`
+3. Check Edge Function logs in Supabase dashboard
+
+---
+
+Built with 🐧 by Kin Team
